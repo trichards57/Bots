@@ -12,6 +12,8 @@ internal class World
     public World(int width, int height, int agentCount)
     {
         const int minSpeed = 20;
+        const int minEnergy = 500;
+        const int maxEnergy = 5000;
 
         Width = width;
         Height = height;
@@ -21,10 +23,12 @@ internal class World
                 var angle = Random.Shared.NextSingle() * 2 * (float)Math.PI;
                 var speed = minSpeed + Random.Shared.NextSingle() * (MaxSpeed - minSpeed);
                 var vel = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * speed;
+
                 return new Bot(
                 i,
                 Vector2.Create(Random.Shared.NextSingle() * width, Random.Shared.NextSingle() * height),
-                vel);
+                vel,
+                minEnergy + Random.Shared.NextSingle() * (maxEnergy - minEnergy));
             })];
     }
 
@@ -45,14 +49,12 @@ internal class World
                 var dist = Vector2.Distance(b.Position, c.Position);
                 var dn = Vector2.Normalize(b.Position - c.Position);
                 var vrel = Vector2.Dot((b.Velocity - c.Velocity), dn);
+                if (float.IsNaN(vrel)) continue;
 
-                if (dist > float.Epsilon && dist < (b.Radius + c.Radius))
+                if (vrel < 0 && dist > float.Epsilon && dist < (b.Radius + c.Radius))
                 {
-                    if (vrel >= 0) continue;
-
                     var j = (-2 * b.Mass * c.Mass * vrel)/(b.Mass + c.Mass);
-
-                    if (float.IsNaN(j) || float.IsNaN(vrel)) continue;
+                    if (float.IsNaN(j) ) continue;
 
                     vel += (j * dn)/b.Mass;
                 }
